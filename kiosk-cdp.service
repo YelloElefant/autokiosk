@@ -1,0 +1,28 @@
+[Unit]
+Description=Expose kiosk Chrome DevTools (CDP) port to the LAN via socat
+After=network-online.target kiosk.service
+Wants=network-online.target
+BindsTo=kiosk.service
+
+[Service]
+Type=simple
+# Defaults, overridden by /etc/default/kiosk-cdp
+Environment=CDP_LISTEN_PORT=9223
+Environment=CDP_TARGET_PORT=9222
+Environment=CDP_ALLOW_RANGE=192.168.0.0/16
+EnvironmentFile=-/etc/default/kiosk-cdp
+
+DynamicUser=yes
+ExecStart=/usr/bin/socat \
+  TCP-LISTEN:${CDP_LISTEN_PORT},fork,reuseaddr,range=${CDP_ALLOW_RANGE} \
+  TCP:127.0.0.1:${CDP_TARGET_PORT}
+Restart=always
+RestartSec=2
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=kiosk.service
